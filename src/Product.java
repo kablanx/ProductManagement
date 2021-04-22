@@ -24,12 +24,14 @@ public class Product {
         this.id=0;
         this.name="no name";
         this.price=BigDecimal.valueOf(0.00);
+        this.bestBefore=LocalDate.now().plusDays(5);
     }
 
     /*public*/ Product(int id, String name, BigDecimal price){
         this.id=id;
         this.name=name;
         this.price=price;
+        this.bestBefore=LocalDate.now().plusDays(5);
     }
     public int getId() {
         return id;
@@ -80,19 +82,10 @@ public class Product {
         if(this==obj){
             return true;
         }
-        if(obj==null){
-            return false;
+        if(obj instanceof Product){
+            final Product other=(Product) obj;
+            return this.id==other.id;
         }
-        if(getClass()!=obj.getClass()){
-            return false;
-        }
-        final Product other = (Product) obj;
-        if(this.id!=other.id){
-            return false;
-        }
-        if(!Objects.equals(this.name, other.name)){
-            return false;
-        }
-        return true;
+        return false;
     }
 }
