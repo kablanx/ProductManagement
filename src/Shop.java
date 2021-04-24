@@ -1,7 +1,3 @@
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.Comparator;
-
 /**
  * {@code shop} class represents an application that manages Products
  */
@@ -11,14 +7,14 @@ public class Shop {
         ProductManager pm = new ProductManager("en-GB");
 
 //        pm.createProduct(232, "Cookies", BigDecimal.valueOf(1.99), LocalDate.now().plusDays(3));
-        pm.parseProduct("F,22, Tea, 2");
+        pm.parseProduct("F,22,Tea,2,2021-08-19");
         pm.parseProduct("D,232,Tea,2,2019-09-19");
 
-//        pm.parseReview("232, Nice hot cup of tea");
-//        pm.parseReview("232, Fine tea");
+        pm.parseReview("232, Nice hot cup of tea");
+        pm.parseReview("232, Fine tea");
 //        pm.parseReview("232, Perfect tea");
         pm.printProductReport(232);
-        pm.printProductReport(22);
+//        pm.printProductReport(22);
 
 //        pm.createProduct(323, "Monster", BigDecimal.valueOf(1.99));
 //        pm.reviewProduct(323, "Nice drink!");

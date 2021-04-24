@@ -1,4 +1,10 @@
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -26,7 +32,9 @@ public class ProductManager {
     private ResourceBundle config = ResourceBundle.getBundle("config");
     private MessageFormat reviewFormat = new MessageFormat(config.getString("review.data.format"));
     private MessageFormat productFormat = new MessageFormat(config.getString("product.data.format"));
-
+    private Path reportsFolder = Path.of(config.getString("reports.folder"));
+    private Path dataFolder = Path.of(config.getString("data.folder"));
+    private Path tempFolder = Path.of(config.getString("temp.folder"));
 
     public ProductManager(Locale locale) {
         this(locale.toLanguageTag());
@@ -96,31 +104,44 @@ public class ProductManager {
         return product;
     }
 
-    public void printProductReport(Product product) {
+    public void printProductReport(Product product) throws IOException {
         List<Review> reviews = products.get(product);
-        StringBuilder txt = new StringBuilder();
+        Collections.sort(reviews);
+        Path productFile = reportsFolder.resolve(MessageFormat.format(config.getString("report.file"), product.getId()));
 
-        txt.append(formatter.formatProduct(product));
+        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(Files.newOutputStream(productFile, StandardOpenOption.CREATE), "UTF-8"))) {
+            out.append(formatter.formatProduct(product) + System.lineSeparator());
+            if (reviews.isEmpty()) {
+                out.append(formatter.getText("no.reviews") + System.lineSeparator());
+            } else {
+                out.append(reviews.stream().map(r -> formatter.formatReview(r) + System.lineSeparator()).collect(Collectors.joining((CharSequence) Collectors.joining())));
+            }
+        }
+
+
+//        StringBuilder txt = new StringBuilder();
+//
+//        txt.append(formatter.formatProduct(product));
 //        if (product.getBestBefore() != null) {
 //            txt.append(formatter.formatProduct(product));
 //        } else {
 //            txt.append("");
 //        }
-        txt.append('\n');
+//        txt.append('\n');
 //        Collections.sort(reviews);
 //        for (Review review : reviews) {
 //            txt.append(formatter.formatReview(review));
 //            txt.append('\n');
 //        }
-        if (reviews.isEmpty()) {
-            txt.append(formatter.getText("no.reviews") + '\n');
-        } else {
-            txt.append(reviews.stream()
-                    .map(r -> formatter.formatReview(r) + '\n')
-                    .collect(Collectors.joining())
-            );
-        }
-        System.out.println(txt);
+//        if (reviews.isEmpty()) {
+//            txt.append(formatter.getText("no.reviews") + '\n');
+//        } else {
+//            txt.append(reviews.stream()
+//                    .map(r -> formatter.formatReview(r) + '\n')
+//                    .collect(Collectors.joining())
+//            );
+//        }
+//        System.out.println(txt);
 
     }
 
@@ -129,6 +150,9 @@ public class ProductManager {
             printProductReport(finProduct(id));
         } catch (ProductManagerException ex) {
             logger.log(Level.INFO, ex.getMessage());
+        }
+        catch (IOException ex){
+            logger.log(Level.SEVERE, "Error printing product report"+ex.getMessage(), ex);
         }
 
     }
@@ -161,20 +185,20 @@ public class ProductManager {
     public void parseProduct(String text) {
         try {
             Object[] values = productFormat.parse(text);
-            int id=Integer.parseInt((String) values[1]);
-            String name=(String) values[2];
-            BigDecimal price=BigDecimal.valueOf(Double.parseDouble((String)values[3]));
-            switch ((String) values[0]){
+            int id = Integer.parseInt((String) values[1]);
+            String name = (String) values[2];
+            BigDecimal price = BigDecimal.valueOf(Double.parseDouble((String) values[3]));
+            switch ((String) values[0]) {
                 case "D":
                     createProduct(id, name, price);
                     break;
                 case "F":
-                    LocalDate bestBefore=LocalDate.parse((String)values[4]);
+                    LocalDate bestBefore = LocalDate.parse((String) values[4]);
                     createProduct(id, name, price, bestBefore);
             }
 //            reviewProduct(Integer.parseInt((String) values[0]), (String) values[1]);
         } catch (ParseException | NumberFormatException | DateTimeException ex) {
-            logger.log(Level.WARNING, "Error parsing product " + text +" "+ ex.getMessage());
+            logger.log(Level.WARNING, "Error parsing product " + text + " " + ex.getMessage());
         }
     }
 
